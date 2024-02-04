@@ -4,6 +4,10 @@ on:
   release:
     types: [published, unpublished, created, edited, deleted]
   workflow_dispatch:
+  workflow_call:
+    secrets:
+      VPM_REPO_TOKEN:
+        required: true
 
 jobs:
   dispatch:
