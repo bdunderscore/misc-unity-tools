@@ -71,7 +71,7 @@ jobs:
     if: needs.increment-version.outputs.skip != 'true'
     permissions:
       contents: write
-    uses: bdunderscore/misc-unity-tools/.github/workflows/do-release.yaml@main
+    uses: bdunderscore/misc-vrc-tools/.github/workflows/do-release.yaml@main
     with:
       version_tag: ${{ needs.increment-version.outputs.version }}
     secrets: inherit

@@ -1,7 +1,7 @@
 ﻿name: Generate release
 
 env:
-  packageName: "nadena.dev.misc-unity-tools"
+  packageName: "nadena.dev.misc-vrc-tools"
 
 on:
   workflow_call:
@@ -51,5 +51,5 @@ jobs:
   rebuild-repo:
     needs: [ release ]
     if: needs.increment-version.outputs.skip != 'true'
-    uses: bdunderscore/misc-unity-tools/.github/workflows/trigger-repo-rebuild.yaml@main
+    uses: bdunderscore/misc-vrc-tools/.github/workflows/trigger-repo-rebuild.yaml@main
     secrets: inherit
