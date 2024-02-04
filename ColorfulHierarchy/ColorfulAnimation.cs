@@ -102,8 +102,9 @@ namespace nadena.dev.misc.ColorfulAnimation.Editor
                 CurrentIndex++;
             }
             
-            var h = (CurrentIndex / 8.0f) % 1.0f;
-            DopelineColor = Color.HSVToRGB(h, 1.0f, 1.0f);
+            var h = (CurrentIndex / (Mathf.PI * 4f)) % 1.0f;
+            var s = Mathf.Lerp(0.7f, 0.9f, CurrentIndex % 2);
+            DopelineColor = Color.HSVToRGB(h, s, 1.0f);
             NodeToColor[node.id] = DopelineColor;
         }
 
