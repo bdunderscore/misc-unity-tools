@@ -1,4 +1,4 @@
-﻿name: Automatically release
+﻿name: Automatically bump version and trigger release
 
 env:
   packageName: "nadena.dev.misc-unity-tools"
@@ -20,16 +20,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Check last commit author
-        id: check_commit_author
+        with:
+          fetch-depth: 0
+          ref: release
+      
+      - name: Check if release is required
+        id: check_release
         run: |
-          if [ "$(git log -1 --pretty=format:'%an')" == "GitHub Actions" ]; then
-            echo "Commit author is GitHub Actions"
-            echo ::set-output name=skip::true
+          git fetch origin main
+          if git merge-base --is-ancestor main release; then
+            echo "No new commits on release branch"
+            exit 1
           else
-            echo "Commit author is not GitHub Actions"
-            echo ::set-output name=skip::false
+            echo "New commits on release branch"
           fi
+      
+      - name: Merge into release branch
+        id: merge_release
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@nadena.dev"
+          git merge origin/main
+          
       - name: Increment version
         id: increment_version
         if: steps.check_commit_author.outputs.skip != 'true'
@@ -37,11 +49,13 @@ jobs:
           jq '.version = (.version | split(".") | .[2] = (.[2] | tonumber | . + 1) | join("."))' \
             package.json > package.json.tmp
           mv -vf package.json.tmp package.json
+
       - name: Read version
         id: read_version
         if: steps.check_commit_author.outputs.skip != 'true'
         run: |
           echo ::set-output name=version::$(jq -r .version package.json)
+
       - name: Commit and push
         if: steps.check_commit_author.outputs.skip != 'true'
         run: |
@@ -49,44 +63,14 @@ jobs:
           git config --global user.email "actions@nadena.dev"
           git commit -am "Bump version to ${{ steps.read_version.outputs.version }}"
           git tag -a ${{ steps.read_version.outputs.version }} -m "Release ${{ steps.read_version.outputs.version }}"
-          git push origin HEAD:main --follow-tags
+          git push origin release --follow-tags
 
   release:
     needs: [increment-version]
     if: needs.increment-version.outputs.skip != 'true'
-    runs-on: ubuntu-latest
     permissions:
       contents: write
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set Environment Variables
-        run: |
-          echo "zipFile=${{ env.packageName }}-${{ needs.increment-version.outputs.version }}".zip >> $GITHUB_ENV
-
-      - name: Create Zip
-        run: |
-          zip ".github/${{env.zipFile}}" ./* -r -x .github .git '.git/*' '*~/*' '*.ps1*'
-          mv .github/${{env.zipFile}} ${{env.zipFile}}
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: package-zip
-          path: ${{ env.zipFile }}
-
-      - name: Make Release
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
-        with:
-          draft: false
-          generate_release_notes: true
-          tag_name: ${{ needs.increment-version.outputs.version }}
-          name: ${{ needs.increment-version.outputs.version }}
-          files: |
-            ${{ env.zipFile }}
-            package.json
-  rebuild-repo:
-    needs: [release]
-    if: needs.increment-version.outputs.skip != 'true'
-    uses: bdunderscore/misc-unity-tools/.github/workflows/trigger-repo-rebuild.yaml@main
+    uses: bdunderscore/misc-unity-tools/.github/workflows/do-release.yaml@main
+    with:
+      version_tag: ${{ needs.increment-version.outputs.version }}
     secrets: inherit

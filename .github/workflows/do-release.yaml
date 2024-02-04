@@ -1,0 +1,55 @@
+﻿name: Generate release
+
+env:
+  packageName: "nadena.dev.misc-unity-tools"
+
+on:
+  workflow_call:
+    inputs:
+      version_tag:
+        required: true
+        type: string
+    secrets:
+      VPM_REPO_TOKEN:
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.version_tag }}
+
+      - name: Set Environment Variables
+        run: |
+          echo "zipFile=${{ env.packageName }}-${{ github.event.inputs.version_tag }}".zip >> $GITHUB_ENV
+
+      - name: Create Zip
+        run: |
+          zip ".github/${{env.zipFile}}" ./* -r -x .github .git '.git/*' '*~/*' '*.ps1*'
+          mv .github/${{env.zipFile}} ${{env.zipFile}}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package-zip
+          path: ${{ env.zipFile }}
+
+      - name: Make Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+        with:
+          draft: false
+          generate_release_notes: true
+          tag_name: ${{ github.event.inputs.version_tag }}
+          name: ${{ github.event.inputs.version_tag }}
+          files: |
+            ${{ env.zipFile }}
+            package.json
+  rebuild-repo:
+    needs: [ release ]
+    if: needs.increment-version.outputs.skip != 'true'
+    uses: bdunderscore/misc-unity-tools/.github/workflows/trigger-repo-rebuild.yaml@main
+    secrets: inherit
