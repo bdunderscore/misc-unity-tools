@@ -1,5 +1,8 @@
 ﻿name: Automatically release
 
+env:
+  packageName: "nadena.dev.misc-unity-tools"
+
 on:
   workflow_dispatch:
   push:
@@ -56,6 +59,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set Environment Variables
+        run: |
+          echo "zipFile=${{ env.packageName }}-${{ needs.increment-version.outputs.version }}".zip >> $GITHUB_ENV
 
       - name: Create Zip
         run: |
