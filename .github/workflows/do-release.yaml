@@ -22,11 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.version_tag }}
+          ref: ${{ inputs.version_tag }}
 
       - name: Set Environment Variables
         run: |
-          echo "zipFile=${{ env.packageName }}-${{ github.event.inputs.version_tag }}".zip >> $GITHUB_ENV
+          echo "zipFile=${{ env.packageName }}-${{ inputs.version_tag }}".zip >> $GITHUB_ENV
 
       - name: Create Zip
         run: |
@@ -43,8 +43,8 @@ jobs:
         with:
           draft: false
           generate_release_notes: true
-          tag_name: ${{ github.event.inputs.version_tag }}
-          name: ${{ github.event.inputs.version_tag }}
+          tag_name: ${{ inputs.version_tag }}
+          name: ${{ inputs.version_tag }}
           files: |
             ${{ env.zipFile }}
             package.json
