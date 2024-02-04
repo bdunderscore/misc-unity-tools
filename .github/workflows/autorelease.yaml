@@ -88,6 +88,5 @@ jobs:
   rebuild-repo:
     needs: [release]
     if: needs.increment-version.outputs.skip != 'true'
-    runs-on: ubuntu-latest
-    uses: bdunderscore/misc-unity-tools/.github/workflows/rebuild-repo.yml@main
+    uses: bdunderscore/misc-unity-tools/.github/workflows/trigger-repo-rebuild.yaml@main
     secrets: inherit
